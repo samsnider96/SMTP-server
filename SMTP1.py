@@ -20,7 +20,7 @@ def mFParser(s, l):  #s is the input string, l is the full input list.  l not cu
 
 
 
-  mailStr = mailFromStr[:5]     #seperates off the 'mail' str, and checks it  #WHY IS THIS 4???
+  mailStr = mailFromStr[:5]     #seperates off the 'mail' str, and checks it  
   if mailStr != 'MAIL ':
     error500()
     return 0
@@ -39,7 +39,7 @@ def mFParser(s, l):  #s is the input string, l is the full input list.  l not cu
   for x in blankSpaceL: 
     if x == 'F':  
       break
-    if x != ' ':        #this block checks that what's between 'mail' and 'from' is indeed blank space, and not chars.
+    if x != ' ' and x != '\t':        #this block checks that what's between 'mail' and 'from' is indeed blank space, and not chars.
       error500()
       return 0
       break
@@ -135,13 +135,20 @@ def mFParser(s, l):  #s is the input string, l is the full input list.  l not cu
     error501()
     return 0
 
-          #################################  End of all parsing #################################
+          #################################  End of MAIL FROM parsing #################################
 
   return 1
 
 
 
+
+
+
 def rCParser(s, l):     #Parses the RCPT-TO string.
+
+
+        #################################  Beginning of RCPT-TO #############################
+
 
 
   colonCheck = s.find(':', 1)   
@@ -158,9 +165,113 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
     return 0
 
   toStr = rcptToStr[-2:]        #seperates off the 'TO' str, and checks it
-  if fromStr != 'TO':
+  if toStr != 'TO':
     error500()
     return 0
+
+
+  afterRcptStr = rcptToStr[4:] #creates a string that's everything after 'RCPT'
+  blankSpaceL2 = list(afterRcptStr)  
+
+  for x in blankSpaceL2: 
+    if x == 'T':  
+      break
+    if x != ' ' and x != '\t':        #this block checks that what's between 'mail' and 'from' is indeed blank space, and not chars.
+      error500()
+      return 0
+      break
+
+
+
+          #################################  Beginning of Path #################################
+
+  pathL = list(forwardPathStr)    
+
+  for y in pathL:
+    if y == '<':    #this block checks the first path error
+      break
+    if y != ' ':
+      error501()
+      return 0
+      break
+
+
+
+
+          ##########################  Beginning of local-part #################################
+
+  preBrack, z = s.split('<', 1)  #Makes sure mailbox is not a special char or a space
+  if z[0]==' ' or z[0]=='@' or z[0]=='<' or z[0]=='>' or z[0]=='(' or z[0]==')' or z[0]=='[' or z[0]==']' or z[0]=='\\' or z[0]=='.' or z[0]==',' or z[0]==';' or z[0]==':' or z[0]=='\"':      
+    error501()
+    return 0          
+
+
+
+          #################################  mailbox #################################
+  
+
+  atCheck = s.find('@')   
+  if atCheck == -1:     #locates the @ char, and makes sure it's not missing.
+    error501()
+    return 0
+
+  localpartChecker = list(z)  #Creates a list out of z
+
+  for i in localpartChecker:    #Makes sure mailbox is not a special char or a space
+    if i == '@':
+      break
+    if i==' ' or i=='<' or i=='>' or i=='(' or i==')' or i=='[' or i==']' or i=='\\' or i=='.' or i==',' or i==';' or i==':' or i=='\"':
+      error501()
+      return 0
+      break
+
+          #################################  domain #################################
+
+  preAt, postAtStr = s.split('@', 1)    #postAtStr string is everything after the '@' character.
+
+  if postAtStr[0] not in string.ascii_letters:    #Checks very first domain char
+    error501()
+    return 0
+
+
+  postAtL = list(postAtStr)       #postAtL is the list version of postAtStr
+  for j in range( 0, len(postAtL) ):
+    if postAtL[j] == '>' or postAtL[j] == ' ':
+      break
+    if (postAtL[j-1] == '.') and postAtL[j] not in string.ascii_letters:    #Checks the char directly after any '.'
+      error501()
+      return 0
+      break
+    if postAtL[j].isdigit() == 0 and postAtL[j] != '.' and postAtL[j] not in string.ascii_letters:  #checks whole domain or wierd chars
+      error501()
+      return 0
+      break
+
+
+          #################################  End of Path #################################
+  
+  endPathChck = s.find('>', 1)    
+  if endPathChck == -1:     #locates the '>' character, and makes sure it's not missing.
+    error501()
+    return 0
+
+  for t in postAtL:
+
+    if  t == '>':   #this block checks the second path error
+      break
+    if t == ' ':
+      error501() 
+      return 0
+      break
+
+          #################################  final part of "rcpt-to-cmd" #################################
+
+  prePathClose, postPath = s.split('>', 1)    #postPaths is everything after the '>' character.
+  if postPath != '\r\n':
+    error501()
+    return 0
+
+          #################################  End of RCPT-TO parsing #################################
 
   return 1
 
@@ -192,7 +303,7 @@ def main():
       if mFParser(inVarMF, inListMF) == 1:
         print '250 OK'
 
-     inVarRC = raw_input() + '\r\n'     #rcpt-to parser call
+      inVarRC = raw_input() + '\r\n'     #rcpt-to parser call
       inListRC = list(inVarRC)
       print inVarRC[0:inVarRC.index('\r')]
       if rCParser(inVarRC, inListRC) == 1:
