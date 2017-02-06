@@ -3,11 +3,37 @@
 
 #TO DO ::::  
 
-#FIX THE POST- '>' PARSING!!! 
-      #I think i've done this with a for loop... STILL NEED TO MAKE SURE THE LAST CHARS ARE /r/n
-          #Does \r\n count as one character or 2?
+#NEXT, most important to-do
+      #add full 503 error proccessing.  ALready done for RCPT ---> data errors.  Try to block stdio.  Try to use:
+          
+          #sys.stdout = NullIO()
+          #mFParser()
+          #sys.stdout = sys.__stdout__
+
+          #Could either use the above method, or provide checkers like I did for the data method.
+          #But the checker thing would be really bad code.  NRS!!! never repeat yourself
+
+          #Cases I need to fix:
+                #mail ---> RCPT
+                #RCPT ---> mail
+                #Maybe the text that comes after data to previous ones??  
+                #DATA ---> RCPT
+                #DATA ---> mail
+
+#begin proccessing the data text
+
+#export all of this to a file on linux
+
 # FIX THE a.b.c thing from the email...................
-#See if the 'MAIL ' or 'RCPT ' comparisons fuck up the tab case.  I think they would.
+
+#See if the 'MAIL ' or 'RCPT ' comparisons mess up the tab case, as opposed to 'MAIL'.  I think they would.
+     #If they do, I solved this in the data section.
+
+#FIX THE POST- '>' PARSING!!! 
+      #I think i've done this with a for loop... STILL NEED TO TEST!!
+
+#clean up code by consolidating similar parts of MAILFROM and RCPT
+
 
 import sys
 import string
@@ -138,11 +164,13 @@ def mFParser(s, l):  #s is the input string, l is the full input list.  l not cu
 
           #################################  final part of "mail from" #################################
 
-  prePathClose, postPath = s.split('>', 1)    #postPaths is everything after the '>' character.
-  for b in postPath:
-    if b != '\r\n' and b != '\t' and b != ' ':
+  prePathClose, postPath = s.split('>', 1)    #postPath is everything after the '>' character.
+  postPathL = list(postPath)
+ 
+  for b in postPathL:
+    if b != '\r' and b != '\n' and b != '\t' and b != ' ':
       error501()
-      return 0        #Needa make sure this isn't an endless loop!
+      return 0        
 
           #################################  End of MAIL FROM parsing #################################
 
@@ -288,11 +316,12 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
           #################################  final part of "rcpt-to-cmd" #################################
 
   prePathClose, postPath = s.split('>', 1)    #postPaths is everything after the '>' character.
-
-  for b in postPath:
-    if b != '\r\n' and b != '\t' and b != ' ':
+  postPathL = list(postPath)
+ 
+  for b in postPathL:
+    if b != '\r' and b != '\n' and b != '\t' and b != ' ':
       error501()
-      return 0        #Needa make sure this isn't an endless loop!
+      return 0    
 
           #################################  End of RCPT-TO parsing #################################
 
@@ -304,36 +333,60 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
 
 
 
+
+
+
+
 def dataChecker(s, l):  #data cheker is the same as data parser, but simply doesn't print error messages.
 
+  spaceCheck = s.find(' ', 1) 
+
   dataStr = s[:4]     #seperates off the 'DATA' str, and checks it  
-  if mailStr != 'DATA':
+  if dataStr != 'DATA':
     return 0
 
-  preA, postA = s.split('A', 2)    #postPaths is everything after the second 'A' character.
+  if l[4] != ' ' and l[4] != '\t' and l[4] != '\r':
+    return 0
 
-  for i in postA:
-    if i != '\r\n' and i != '\t' and i != ' ':
-      return 0        #Needa make sure this isn't an endless loop!
+  elif l[4] == ' ' or l[4] == '\t':
+    if spaceCheck != -1:
+      preSpace, postSpace = s.split(' ', 1)    #postPaths is everything after the first ' ' character.
+      postSpaceList = list(postSpace)
+
+      for i in postSpaceList:
+        if i != '\r' and i != '\n' and i != '\t' and i != ' ':
+          return 0 
 
   return 1
 
 
 def dataParser(s, l):
 
+  spaceCheck = s.find(' ', 1) 
+
   dataStr = s[:4]     #seperates off the 'DATA' str, and checks it  
-  if mailStr != 'DATA':
+  if dataStr != 'DATA':
     error500()
     return 0
 
-  preA, postA = s.split('A', 2)    #postPaths is everything after the second 'A' character.
+  if l[4] != ' ' and l[4] != '\t' and l[4] != '\r':
+    error500()
+    return 0
 
-  for i in postA:
-    if i != '\r\n' and i != '\t' and i != ' ':
-      error500()
-      return 0        #Needa make sure this isn't an endless loop!
+  elif l[4] == ' ' or l[4] == '\t':
+    if spaceCheck != -1:
+      preSpace, postSpace = s.split(' ', 1)    #postPaths is everything after the first ' ' character.
+      postSpaceList = list(postSpace)
+
+      for i in postSpaceList:
+        if i != '\r' and i != '\n' and i != '\t' and i != ' ':
+          error500()
+          return 0 
 
   return 1
+
+
+
 
 
 
@@ -355,6 +408,13 @@ def error503():
     return
 
 
+
+
+
+
+
+
+
 def main():
 
                         #set state machine variables:
@@ -366,30 +426,49 @@ def main():
     while 1:                #accept input, parse it, and provide output in a loop.
       
 
-      while stateCheckerMF == 0:
-        inVarMF = raw_input() + '\r\n'    #mail from parser call
+      while stateCheckerMF == 0:        #MAIL FROM parse:
+
+        print 'start MF loop'
+
+        inVarMF = raw_input() + '\r\n'    
         inListMF = list(inVarMF)
+
+        if dataChecker(inVarMF, inListMF) == 1 and stateCheckerMF == 0: #Tried data command out of order
+          error503()            
+          break
+
         print inVarMF[0:inVarMF.index('\r')]
+
         if mFParser(inVarMF, inListMF) == 1:
           print '250 OK'
-          stateCheckerMF == 1
+          stateCheckerMF = 1
 
 
-      while stateCheckerRC == 0:
-        inVarRC = raw_input() + '\r\n'     #rcpt-to parser call
+      while stateCheckerRC == 0:      #RCPT TO parse:
+
+        print 'start RC loop'
+
+        inVarRC = raw_input() + '\r\n'     
         inListRC = list(inVarRC)
 
-        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 1    
+        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 0: #Tried data command out of order
+          error503()            
+          break
+
+        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 1:  #tried data command in proper order
           stateCheckerRC = 1                      
-          break                                 #Checks that the state machine shouldn't move on.
+          break                                 
 
         print inVarRC[0:inVarRC.index('\r')]
-          if rCParser(inVarRC, inListRC) == 1:
-            moreThanOneRc = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
-            print '250 OK'
+
+        if rCParser(inVarRC, inListRC) == 1:
+          oneOrMoreRc = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
+          print '250 OK'
 
 
-      inVarData = raw_input() + '\r\n'
+
+      print 'start DATA part'
+      inVarData = raw_input() + '\r\n'  #DATA parse:
       inListData = list(inVarData)
       if dataParser(inVarData, inListData) == 1:
         print '354 Start mail input; end with <CRLF>.<CRLF>'
