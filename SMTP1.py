@@ -1,28 +1,20 @@
 #This program will parse string commands and determine if they're valid SMTP commands.
 #validates the 'MAIL FROM', 'RCPT TO', and 'DATA' commands.
 
+
+#USEFUL for writing to files
+#file("f.log", "rw+").write(data)
+
+
 #TO DO ::::  
 
-#NEXT, most important to-do
-      #add full 503 error proccessing.  ALready done for RCPT ---> data errors.  Try to block stdio.  Try to use:
-          
-          #sys.stdout = NullIO()
-          #mFParser()
-          #sys.stdout = sys.__stdout__
-
-          #Could either use the above method, or provide checkers like I did for the data method.
-          #But the checker thing would be really bad code.  NRS!!! never repeat yourself
-
-          #Cases I need to fix:
-                #mail ---> RCPT
-                #RCPT ---> mail
-                #Maybe the text that comes after data to previous ones??  
-                #DATA ---> RCPT
-                #DATA ---> mail
-
-#begin proccessing the data text
+#NEXT, most important to-do::::
 
 #export all of this to a file on linux
+
+#test all 503 error proccessing.
+
+#test proccessing of text
 
 # FIX THE a.b.c thing from the email...................
 
@@ -327,11 +319,70 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
 
   return 1
 
+def endOfTxtChecker(s, l):
+
+  if s == '.':
+    return 1
+
+  return 0
+
+def MFChecker(s, l):  #for use in the state machine in main method
+
+  colonCheck = s.find(':', 1)   
+  if colonCheck == -1:      #locates the colon string, and makes sure it's not missing.
+    return 0
+
+  mailFromStr, rvsPathStr = s.split( s[colonCheck], 1 )   #Splits the input string at the colon.
+
+  mailStr = mailFromStr[:5]     #seperates off the 'mail' str, and checks it  
+  if mailStr != 'MAIL ':
+    return 0
+
+  fromStr = mailFromStr[-4:]        #seperates off the 'from' str, and checks it
+  if fromStr != 'FROM':
+    return 0
+
+  return 1
 
 
+  afterMailStr = mailFromStr[4:] #creates a string that's everything after 'MAIL'
+  blankSpaceL = list(afterMailStr)  #creates a list from the String in previous line
+
+  for x in blankSpaceL: 
+    if x == 'F':  
+      break
+    if x != ' ' and x != '\t':        #this block checks that what's between 'mail' and 'from' is indeed blank space, and not chars.
+      return 0
+      break
 
 
+def RCChecker(s, l):
 
+  colonCheck = s.find(':', 1)   
+  if colonCheck == -1:      #locates the colon string, and makes sure it's not missing.
+    return 0
+
+  rcptToStr, forwardPathStr = s.split( s[colonCheck], 1 )   #Splits the input string at the colon.
+
+
+  rcptStr = rcptToStr[:5]     #seperates off the 'RCPT' str, and checks it  
+  if rcptStr != 'RCPT ':
+    return 0
+
+  toStr = rcptToStr[-2:]        #seperates off the 'TO' str, and checks it
+  if toStr != 'TO':
+    return 0
+
+
+  afterRcptStr = rcptToStr[4:] #creates a string that's everything after 'RCPT'
+  blankSpaceL2 = list(afterRcptStr)  
+
+  for x in blankSpaceL2: 
+    if x == 'T':  
+      break
+    if x != ' ' and x != '\t':        #this block checks that what's between 'mail' and 'from' is indeed blank space, and not chars.
+      return 0
+      break
 
 
 
@@ -393,17 +444,14 @@ def dataParser(s, l):
 
 
 def error500(): 
-
     print '500 Syntax error: command unrecognized'
     return
 
 def error501(): 
-
     print '501 Syntax error in parameters or arguments'
     return
 
 def error503(): 
-
     print '503 Bad sequence of commands'
     return
 
@@ -421,6 +469,7 @@ def main():
   stateCheckerMF = 0
   stateCheckerRC = 0
   oneOrMoreRc = 0  #checks if there's been one or more valid RCPT TO commands
+  stillTakingText = 1
 
   try:
     while 1:                #accept input, parse it, and provide output in a loop.
@@ -433,11 +482,17 @@ def main():
         inVarMF = raw_input() + '\r\n'    
         inListMF = list(inVarMF)
 
-        if dataChecker(inVarMF, inListMF) == 1 and stateCheckerMF == 0: #Tried data command out of order
-          error503()            
-          break
-
         print inVarMF[0:inVarMF.index('\r')]
+
+
+        if dataChecker(inVarMF, inListMF) == 1: #Tried data command out of order
+          error503()            
+          continue
+
+        if RCChecker(inVarMF, inListMF) == 1: #tried RCPT TO command out of order
+          error503()
+          continue 
+
 
         if mFParser(inVarMF, inListMF) == 1:
           print '250 OK'
@@ -451,15 +506,18 @@ def main():
         inVarRC = raw_input() + '\r\n'     
         inListRC = list(inVarRC)
 
+        print inVarRC[0:inVarRC.index('\r')]
+
         if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 0: #Tried data command out of order
           error503()            
-          break
+          continue
+
+        if MFChecker(inVarRC, inListRC) == 1:            #tried data command out of order                 
+          error503()            
+          continue
 
         if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 1:  #tried data command in proper order
-          stateCheckerRC = 1                      
-          break                                 
-
-        print inVarRC[0:inVarRC.index('\r')]
+          stateCheckerRC = 1                          
 
         if rCParser(inVarRC, inListRC) == 1:
           oneOrMoreRc = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
@@ -470,8 +528,23 @@ def main():
       print 'start DATA part'
       inVarData = raw_input() + '\r\n'  #DATA parse:
       inListData = list(inVarData)
+
       if dataParser(inVarData, inListData) == 1:
         print '354 Start mail input; end with <CRLF>.<CRLF>'
+
+
+      while stillTakingText == 1:   #text input loop:
+            
+        inVarTxt = raw_input() + '\r\n'  
+        inListTxt = list(inVarTxt)
+
+        print inVarTxt[0:inVarTxt.index('\r')]
+
+        if endOfTxtChecker(inVarTxt, inListTxt) == 0:
+          stillTakingText = 0
+          print '250 OK'
+
+
 
 
   except EOFError:
