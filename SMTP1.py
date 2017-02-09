@@ -10,8 +10,6 @@
 
 #NEXT, most important to-do::::
 
-#export all of this to a file on linux
-
 # FIX THE a.b.c thing from the email...................
       # MAIL FROM: <jeffay@a.b.c> should be domain error.
             #This is because every little part should be more than 1 character, and it's currently not.
@@ -489,13 +487,11 @@ def main():
                               #set state machine variables:
       stateCheckerMF = 0
       stateCheckerRC = 0
-      oneOrMoreRc = 0  #checks if there's been one or more valid RCPT TO commands
+      oneOrMoreRC = 0  #checks if there's been one or more valid RCPT TO commands
       stillTakingText = 1
 
 
       while stateCheckerMF == 0:        #MAIL FROM parse:
-
-        print 'start MF loop'
 
         inVarMF = raw_input() + '\r\n'    
         inListMF = list(inVarMF)
@@ -519,34 +515,36 @@ def main():
 
       while stateCheckerRC == 0:      #RCPT TO parse:
 
-        print 'start RC loop'
-
         inVarRC = raw_input() + '\r\n'     
         inListRC = list(inVarRC)
 
         print inVarRC[0:inVarRC.index('\r')]
 
-        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 0: #Tried data command out of order
-          error503()            
+
+        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRC == 0: #Tried data command out of order
+          error503()
           continue
 
         if MFChecker(inVarRC, inListRC) == 1:            #tried data command out of order                 
-          error503()            
+          error503() 
           continue
 
-        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 1:  #tried data command in proper order
-          print 'start DATA part'
+        if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRC == 1:  #tried data command in proper order
           print '354 Start mail input; end with <CRLF>.<CRLF>'
           stateCheckerRC = 1
-          break                          
+          break 
+                       
 
         if rCParser(inVarRC, inListRC) == 1:
-          oneOrMoreRC = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
-          startRc = inVarRC.find('<', 1) + 1
-          endRc = inVarRC.find('>', 1)
-          paths.append( inVarRC[startRC:endRC] )
-          print '250 OK'
+          
+          temp1, temp2 = inVarRC.split('<', 1) 
+          targetString, temp3 = temp2.split('>', 1) 
 
+          paths.append(targetString)
+
+          oneOrMoreRC = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
+
+          print '250 OK'
 
 
 
@@ -560,7 +558,8 @@ def main():
 
         print inVarTxt[0:inVarTxt.index('\r')]
 
-        allText + inVarTxt
+        if endOfTxtChecker(inVarTxt) == 0:
+          allText += inVarTxt
 
         if endOfTxtChecker(inVarTxt) == 1:
           stillTakingText = 0
@@ -569,11 +568,11 @@ def main():
 
       startMF = inVarMF.find('<', 1) + 1
       endMF = inVarMF.find('>', 1)
-      
+
 
       for i in paths:
         f = open(os.getcwd() + "//forward" + "//" + i, "wa+")
-        f.write('From: ' + '<' + inVarMF[startMF:endMF] '>' + '\r\n')
+        f.write('From: ' + '<' + inVarMF[startMF:endMF] + '>' + '\r\n')
         for j in paths:
           f.write('To: ' + '<' + j + '>' + '\r\n')
         f.write(allText)
