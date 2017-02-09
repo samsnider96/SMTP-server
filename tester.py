@@ -1,3 +1,4 @@
+'''
 def dataParser(s, l):
 
   spaceCheck = s.find(' ', 1) 
@@ -29,13 +30,20 @@ def error500():
   print '500 Syntax error: command unrecognized'
   return
 
+'''
+
+import os
 
 def main():
 
-  inVarData = raw_input() + '\r\n'  #DATA parse:
-  inListData = list(inVarData)
-  if dataParser(inVarData, inListData) == 1:
-    print '354 Start mail input; end with <CRLF>.<CRLF>'
+  rCArray = []
+
+  f = open(os.getcwd() + "//forward" + "//" + "testFile", "a+")
+  f.write("test text that goes into testFile")
+  f.close()
+
+ # i = open("testFile", "r")
+ # i.read()
 
 if __name__ == '__main__':
     main()

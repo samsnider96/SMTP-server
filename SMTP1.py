@@ -12,14 +12,14 @@
 
 #export all of this to a file on linux
 
-#test all 503 error proccessing.
-
-#test proccessing of text
-
 # FIX THE a.b.c thing from the email...................
+      # MAIL FROM: <jeffay@a.b.c> should be domain error.
+            #This is because every little part should be more than 1 character, and it's currently not.
 
 #See if the 'MAIL ' or 'RCPT ' comparisons mess up the tab case, as opposed to 'MAIL'.  I think they would.
      #If they do, I solved this in the data section.
+
+#Take out testing messages....ie, "start MF loop"
 
 #FIX THE POST- '>' PARSING!!! 
       #I think i've done this with a for loop... STILL NEED TO TEST!!
@@ -319,9 +319,21 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
 
   return 1
 
-def endOfTxtChecker(s, l):
 
-  if s == '.':
+
+
+
+
+
+
+
+
+
+
+
+def endOfTxtChecker(s):
+
+  if s == '.\r\n':
     return 1
 
   return 0
@@ -471,9 +483,12 @@ def main():
   oneOrMoreRc = 0  #checks if there's been one or more valid RCPT TO commands
   stillTakingText = 1
 
+
   try:
     while 1:                #accept input, parse it, and provide output in a loop.
       
+
+      rCArray = []
 
       while stateCheckerMF == 0:        #MAIL FROM parse:
 
@@ -517,32 +532,36 @@ def main():
           continue
 
         if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRc == 1:  #tried data command in proper order
-          stateCheckerRC = 1                          
+          print 'start DATA part'
+          print '354 Start mail input; end with <CRLF>.<CRLF>'
+          stateCheckerRC = 1
+          break                          
 
         if rCParser(inVarRC, inListRC) == 1:
           oneOrMoreRc = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
+          rCArray.append( inVarRC[0:inVarRC.index('\r')] )
           print '250 OK'
 
 
 
-      print 'start DATA part'
-      inVarData = raw_input() + '\r\n'  #DATA parse:
-      inListData = list(inVarData)
 
-      if dataParser(inVarData, inListData) == 1:
-        print '354 Start mail input; end with <CRLF>.<CRLF>'
 
+
+#      inVarData = raw_input() + '\r\n'  #DATA parse:
 
       while stillTakingText == 1:   #text input loop:
             
         inVarTxt = raw_input() + '\r\n'  
-        inListTxt = list(inVarTxt)
 
         print inVarTxt[0:inVarTxt.index('\r')]
 
-        if endOfTxtChecker(inVarTxt, inListTxt) == 0:
+        if endOfTxtChecker(inVarTxt) == 1:
           stillTakingText = 0
           print '250 OK'
+
+
+
+
 
 
 
