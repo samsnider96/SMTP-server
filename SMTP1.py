@@ -1,36 +1,12 @@
 #This program will parse string commands and determine if they're valid SMTP commands.
 #validates the 'MAIL FROM', 'RCPT TO', and 'DATA' commands.
 
-
-#USEFUL for writing to files
-#file("f.log", "rw+").write(data)
-
-
-#TO DO ::::  
-
-#NEXT, most important to-do::::
-
-# FIX THE a.b.c thing from the email...................
-      # MAIL FROM: <jeffay@a.b.c> should be domain error.
-            #This is because every little part should be more than 1 character, and it's currently not.
-
-#See if the 'MAIL ' or 'RCPT ' comparisons mess up the tab case, as opposed to 'MAIL'.  I think they would.
-     #If they do, I solved this in the data section.
-
-#Take out testing messages....ie, "start MF loop"
-
-#FIX THE POST- '>' PARSING!!! 
-      #I think i've done this with a for loop... STILL NEED TO TEST!!
-
-#clean up code by consolidating similar parts of MAILFROM and RCPT
-
-
 import sys
 import string
 import os
 
 
-def mFParser(s, l):  #s is the input string, l is the full input list.  l not currently used!!!
+def mFParser(s, l):  
 
 
         #################################  Beginning of MAIL FROM #############################
@@ -69,115 +45,9 @@ def mFParser(s, l):  #s is the input string, l is the full input list.  l not cu
       return 0
       break
 
-
-
-
-          #################################  Beginning of Path #################################
-
-  pathL = list(rvsPathStr)    
-
-  for y in pathL:
-    if y == '<':    #this block checks the first path error
-      break
-    if y != ' ' and y != '\t':
-      error501()
-      return 0
-      break
-
-
-
-
-          ##########################  Beginning of local-part #################################
-
-  preBrack, z = s.split('<', 1)  #Makes sure mailbox is not a special char or a space
-  if z[0]==' ' or z[0]=='@' or z[0]=='<' or z[0]=='>' or z[0]=='(' or z[0]==')' or z[0]=='[' or z[0]==']' or z[0]=='\\' or z[0]=='.' or z[0]==',' or z[0]==';' or z[0]==':' or z[0]=='\"':      
-    error501()
-    return 0          
-
-
-
-          #################################  mailbox #################################
-  
-
-  atCheck = s.find('@')   
-  if atCheck == -1:     #locates the @ char, and makes sure it's not missing.
-    error501()
-    return 0
-
-  localpartChecker = list(z)  #Creates a list out of z
-
-  for i in localpartChecker:    #Makes sure mailbox is not a special char or a space
-    if i == '@':
-      break
-    if i==' ' or i=='<' or i=='>' or i=='(' or i==')' or i=='[' or i==']' or i=='\\' or i=='.' or i==',' or i==';' or i==':' or i=='\"':
-      error501()
-      return 0
-      break
-
-          #################################  domain #################################
-
-  preAt, postAtStr = s.split('@', 1)    #postAtStr string is everything after the '@' character.
-
-  if postAtStr[0] not in string.ascii_letters:    #Checks very first domain char
-    error501()
-    return 0
-
-
-  postAtL = list(postAtStr)       #postAtL is the list version of postAtStr
-  for j in range( 0, len(postAtL) ):
-    if postAtL[j] == '>' or postAtL[j] == ' ':
-      break
-    if (postAtL[j-1] == '.') and postAtL[j] not in string.ascii_letters:    #Checks the char directly after any '.'
-      error501()
-      return 0
-      break
-    if postAtL[j].isdigit() == 0 and postAtL[j] != '.' and postAtL[j] not in string.ascii_letters:  #checks whole domain or wierd chars
-      error501()
-      return 0
-      break
-
-
-          #################################  End of Path #################################
-  
-  endPathChck = s.find('>', 1)    
-  if endPathChck == -1:     #locates the '>' character, and makes sure it's not missing.
-    error501()
-    return 0
-
-  for t in postAtL:
-
-    if  t == '>':   #this block checks the second path error
-      break
-    if t == ' ':
-      error501() 
-      return 0
-      break
-
-          #################################  final part of "mail from" #################################
-
-  prePathClose, postPath = s.split('>', 1)    #postPath is everything after the '>' character.
-  postPathL = list(postPath)
- 
-  for b in postPathL:
-    if b != '\r' and b != '\n' and b != '\t' and b != ' ':
-      error501()
-      return 0        
-
-          #################################  End of MAIL FROM parsing #################################
-
-  return 1
-
-
-
-
-
-
-
-
-
-
-
-
+  pathListMF = list(rvsPathStr) 
+   
+  return pathParser(rvsPathStr, pathListMF) 
 
 
 
@@ -221,11 +91,26 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
       return 0
       break
 
+  pathListRc = list(forwardPathStr) 
+
+  return pathParser(forwardPathStr, pathListRc)  
+
+
+
+
+
+
+
+
+
+
+
+def pathParser(s, l):    #This multipurpose path parser is for use in MAIL FROM and RCPT TO.
 
 
           #################################  Beginning of Path #################################
 
-  pathL = list(forwardPathStr)    
+  pathL = l    
 
   for y in pathL:
     if y == '<':    #this block checks the first path error
@@ -317,13 +202,6 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
           #################################  End of RCPT-TO parsing #################################
 
   return 1
-
-
-
-
-
-
-
 
 
 
@@ -515,6 +393,7 @@ def main():
 
       while stateCheckerRC == 0:      #RCPT TO parse:
 
+
         inVarRC = raw_input() + '\r\n'     
         inListRC = list(inVarRC)
 
@@ -569,9 +448,8 @@ def main():
       startMF = inVarMF.find('<', 1) + 1
       endMF = inVarMF.find('>', 1)
 
-
       for i in paths:
-        f = open(os.getcwd() + "//forward" + "//" + i, "wa+")
+        f = open('forward/' + i, 'a+')
         f.write('From: ' + '<' + inVarMF[startMF:endMF] + '>' + '\r\n')
         for j in paths:
           f.write('To: ' + '<' + j + '>' + '\r\n')
@@ -581,11 +459,7 @@ def main():
 
 
 
-
-
-
   except EOFError:
-#   pass 
     sys.exit()
 
 
