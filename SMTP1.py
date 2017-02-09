@@ -29,6 +29,7 @@
 
 import sys
 import string
+import os
 
 
 def mFParser(s, l):  #s is the input string, l is the full input list.  l not currently used!!!
@@ -477,18 +478,20 @@ def error503():
 
 def main():
 
-                        #set state machine variables:
-  stateCheckerMF = 0
-  stateCheckerRC = 0
-  oneOrMoreRc = 0  #checks if there's been one or more valid RCPT TO commands
-  stillTakingText = 1
 
 
+#try switching order of these 2
   try:
     while 1:                #accept input, parse it, and provide output in a loop.
       
+      paths = []
 
-      rCArray = []
+                              #set state machine variables:
+      stateCheckerMF = 0
+      stateCheckerRC = 0
+      oneOrMoreRc = 0  #checks if there's been one or more valid RCPT TO commands
+      stillTakingText = 1
+
 
       while stateCheckerMF == 0:        #MAIL FROM parse:
 
@@ -538,8 +541,10 @@ def main():
           break                          
 
         if rCParser(inVarRC, inListRC) == 1:
-          oneOrMoreRc = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
-          rCArray.append( inVarRC[0:inVarRC.index('\r')] )
+          oneOrMoreRC = 1     #setting this variable means that >=1 valid RCPT TO command has been read.
+          startRc = inVarRC.find('<', 1) + 1
+          endRc = inVarRC.find('>', 1)
+          paths.append( inVarRC[startRC:endRC] )
           print '250 OK'
 
 
@@ -547,7 +552,7 @@ def main():
 
 
 
-#      inVarData = raw_input() + '\r\n'  #DATA parse:
+      allText = ''
 
       while stillTakingText == 1:   #text input loop:
             
@@ -555,10 +560,24 @@ def main():
 
         print inVarTxt[0:inVarTxt.index('\r')]
 
+        allText + inVarTxt
+
         if endOfTxtChecker(inVarTxt) == 1:
           stillTakingText = 0
           print '250 OK'
 
+
+      startMF = inVarMF.find('<', 1) + 1
+      endMF = inVarMF.find('>', 1)
+      
+
+      for i in paths:
+        f = open(os.getcwd() + "//forward" + "//" + i, "wa+")
+        f.write('From: ' + '<' + inVarMF[startMF:endMF] '>' + '\r\n')
+        for j in paths:
+          f.write('To: ' + '<' + j + '>' + '\r\n')
+        f.write(allText)
+        f.close()
 
 
 
@@ -567,7 +586,11 @@ def main():
 
 
   except EOFError:
-    pass
+#   pass 
+    sys.exit()
+
+
+
 
 if __name__ == '__main__':
     main()

@@ -36,8 +36,6 @@ import os
 
 def main():
 
-  rCArray = []
-
   f = open(os.getcwd() + "//forward" + "//" + "testFile", "a+")
   f.write("test text that goes into testFile")
   f.close()
