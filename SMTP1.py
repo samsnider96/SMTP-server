@@ -5,7 +5,6 @@ import sys
 import string
 import os
 
-
 def mFParser(s, l):  
 
 
@@ -356,7 +355,6 @@ def main():
 
 
 
-#try switching order of these 2
   try:
     while 1:                #accept input, parse it, and provide output in a loop.
       
