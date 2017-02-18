@@ -1,6 +1,12 @@
 #does "MAIL FROM:', 'QUIT', etc need to go to standard error instead of output??
 #Should printing 'DATA' be conditional?
 
+#Can I assume that the server will respond with only valid response numbers?  For example, what if 
+#the program respons with 'hello'....should my program quit?  Or just chill?
+
+#Do I need the while and try loops in the bottom?  Like, is there just going to be one argument?  
+#I think so...
+
 
 
 import sys
@@ -55,6 +61,26 @@ def messageParser(s):
 
 
 
+  temporaryNum = afterLine2.find("From:")  #Check if there's another message after this,quit if not
+  if temporaryNum == -1:
+     print("QUIT")
+     sys.exit()
+  else:
+    uselessString5, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
+    messageParser(nextMessage)                                  #use recursion to parse next message
+
+
+
+
+  return
+
+#use fromRecognizer to check for the end of the program
+
+#  except EOFError:
+ #   print("QUIT")
+ #   sys.exit()
+
+
 
 
 def responseHandler250(s):
@@ -86,30 +112,22 @@ def fromRecognizer(s):
   else:
     return 0
 
-#def toRecognizer(s, l):
-
-#def messageSeperator(s):
- # if 'From:' in s:
-
-
-  #else return
-
 
 def main():
 
 
-  try:
-    while 1:                #accept input, parse it, and provide output in a loop.
+#  try:
+ #   while 1:                #accept input, parse it, and provide output in a loop.
 
-      f = open(sys.argv[1],"r")
-      fwFile = f.read()
-      f.close()             #fwFile is the entire forward file.
+  f = open(sys.argv[1],"r")
+  fwFile = f.read()
+  f.close()             #fwFile is the entire forward file.
 
-      messageParser(fwFile)
+  messageParser(fwFile)
 
-  except EOFError:
-    print("QUIT")
-    sys.exit()
+#      except EOFError:
+ #       print("QUIT")
+ #       sys.exit()
 
 
 
