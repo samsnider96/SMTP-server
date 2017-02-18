@@ -1,4 +1,5 @@
-#does 'QUIT' need to go to standard error instead of output??
+#does "MAIL FROM:', 'QUIT', etc need to go to standard error instead of output??
+#Should printing 'DATA' be conditional?
 
 
 
@@ -8,6 +9,9 @@ import os
 
 def messageParser(s):
 
+    #################################  first line #################################
+
+
   line1, afterLine1 = s.split( '\r\n', 1 )   #seprates the first line of fwFile
 
   uselessString1, tempString1 = line1.split( '<', 1 )   
@@ -16,18 +20,58 @@ def messageParser(s):
 
   print('MAIL FROM: <' + fromAddress + '>')
 
-  response1 = raw_input()
-  responseHandler(response1)
+
+  response1 = raw_input()                   #wait for response from server, then handle it in next line
+  responseHandler250(response1)
 
 
+    #################################  second line #################################
 
 
   line2, afterLine2 = afterLine1.split( '\r\n', 1 )   #seprates the 2nd line of fwFile
 
+  uselessString3, tempString2 = line2.split( '<', 1 )   
+  rcptAddress, uselessString4 = tempString2.split( '>', 1 )
 
-def responseHandler(s)
+
+  print('RCPT TO: <' + rcptAddress + '>')
+
+  response2 = raw_input()                   #wait for response from server, then handle it in next line
+  responseHandler250(response2)
+
+
+    #################################  DATA section #################################
+
+  print('DATA')
+
+  response3 = raw_input()                   #wait for response from server, then handle it in next line
+  responseHandler354(response3)
+
+  print(afterLine2)
+  print('.')
+
+  response4 = raw_input()                   #wait for response from server, then handle it in next line
+  responseHandler250(response4)
+
+
+
+
+
+def responseHandler250(s):
 #echo to standard error
-  if s[:3] != '250' and s[:3] != '354':
+  print >> sys.stderr, s
+
+#check if an acceptable response was returned
+  if s[:3] != '250':
+    print("QUIT")
+    sys.exit()
+
+def responseHandler354(s):
+#echo to standard error
+  print >> sys.stderr, s
+
+#check if an acceptable response was returned
+  if s[:3] != '354':
     print("QUIT")
     sys.exit()
 
@@ -62,8 +106,6 @@ def main():
       f.close()             #fwFile is the entire forward file.
 
       messageParser(fwFile)
-
-
 
   except EOFError:
     print("QUIT")

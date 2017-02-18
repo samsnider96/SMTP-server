@@ -104,7 +104,7 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
 
 
 
-def pathParser(s, l):    #This multipurpose path parser is for use in MAIL FROM and RCPT TO.
+def pathParser(s, l):    #This multipurpose path parser is for use in both MAIL FROM and RCPT TO.
 
 
           #################################  Beginning of Path #################################
