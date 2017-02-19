@@ -3,10 +3,14 @@
 
 #Can I assume that the server will respond with only valid response numbers?  For example, what if 
 #the program respons with 'hello'....should my program quit?  Or just chill?
+#Or, what happens if I type '354' when it expects a '250'?
 
 #Do I need the while and try loops in the bottom?  Like, is there just going to be one argument?  
 #I think so...
 
+#Debug case:  when use clicks control D randomly
+
+#Need to fix blank line that comes between message body and period when printing...only happens sometimes.
 
 
 import sys
@@ -53,21 +57,37 @@ def messageParser(s):
   response3 = raw_input()                   #wait for response from server, then handle it in next line
   responseHandler354(response3)
 
-  print(afterLine2)
-  print('.')
 
-  response4 = raw_input()                   #wait for response from server, then handle it in next line
-  responseHandler250(response4)
-
-
-
-  temporaryNum = afterLine2.find("From:")  #Check if there's another message after this,quit if not
+  temporaryNum = afterLine2.find("From:")  #Check if there's another message after this
   if temporaryNum == -1:
-     print("QUIT")
-     sys.exit()
+    print(afterLine2)
+    print('.')
+
+    response4 = raw_input()                   #wait for response from server, then handle it in next line
+    responseHandler250(response4)
+    
+    print("QUIT")
+    sys.exit()
   else:
-    uselessString5, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
-    messageParser(nextMessage)                                  #use recursion to parse next message
+    messageToPrint, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
+    print(messageToPrint)
+    print('.')
+    response4 = raw_input()                   #wait for response from server, then handle it in next line
+    responseHandler250(response4)
+    messageParser(nextMessage)     
+
+
+
+
+
+
+  # temporaryNum = afterLine2.find("From:")  #Check if there's another message after this,quit if not
+  # if temporaryNum == -1:
+  #    print("QUIT")
+  #    sys.exit()
+  # else:
+  #   uselessString5, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
+  #   messageParser(nextMessage)                                  #use recursion to parse next message
 
 
 
