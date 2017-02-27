@@ -13,6 +13,8 @@
 #Need to fix blank line that comes between message body and period when printing...only happens sometimes.
 
 
+#seperate at the space, then check if space exists, and check to left of space.
+
 import sys
 import string
 import os
@@ -38,17 +40,11 @@ def messageParser(s):
     #################################  second line #################################
 
 
-  line2, afterLine2 = afterLine1.split( '\r\n', 1 )   #seprates the 2nd line of fwFile
 
-  uselessString3, tempString2 = line2.split( '<', 1 )   
-  rcptAddress, uselessString4 = tempString2.split( '>', 1 )
-
-
-  print('RCPT TO: <' + rcptAddress + '>')
-
-  response2 = raw_input()                   #wait for response from server, then handle it in next line
-  responseHandler250(response2)
-
+  nextFromLocation = afterLine1.find("From:")  #find the next from token, meaning, the next message.
+  
+  afterLastRCPT = RCPTParser(afterLine1, nextFromLocation) #Call RCPTParser, a recursive function that will 
+                                                            #handle the rest of RCPT parsing.
 
     #################################  DATA section #################################
 
@@ -58,9 +54,8 @@ def messageParser(s):
   responseHandler354(response3)
 
 
-  temporaryNum = afterLine2.find("From:")  #Check if there's another message after this
-  if temporaryNum == -1:
-    print(afterLine2)
+  if nextFromLocation == -1:
+    print afterLastRCPT
     print('.')
 
     response4 = raw_input()                   #wait for response from server, then handle it in next line
@@ -68,8 +63,10 @@ def messageParser(s):
     
     print("QUIT")
     sys.exit()
+
   else:
-    messageToPrint, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
+#    print afterLastRCPT
+    messageToPrint, nextMessage = afterLastRCPT.split("From:", 1)  #Locate beginning of next message
     print(messageToPrint + '.')
  #   print('.')
     response4 = raw_input()                   #wait for response from server, then handle it in next line
@@ -77,29 +74,7 @@ def messageParser(s):
     messageParser(nextMessage)          #Recursion that begins next message in the file.
 
 
-
-
-
-
-  # temporaryNum = afterLine2.find("From:")  #Check if there's another message after this,quit if not
-  # if temporaryNum == -1:
-  #    print("QUIT")
-  #    sys.exit()
-  # else:
-  #   uselessString5, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
-  #   messageParser(nextMessage)                                  #use recursion to parse next message
-
-
-
-
   return
-
-#use fromRecognizer to check for the end of the program
-
-#  except EOFError:
- #   print("QUIT")
- #   sys.exit()
-
 
 
 
@@ -124,20 +99,42 @@ def responseHandler354(s):
 
 
 
-def fromRecognizer(s):
+def RCPTParser(s, nFL): #parameters: "s" is a string starting at the current line of RCPT 
+                          #parsing, and "nFL" (nextFromLine) is the integer location of 
+                          #the beginning of the next message in "s".
 
-  fromStr = s[:5]        #seperates off the 'from' str, and checks it
-  if fromStr == 'From:':
-    return 1
+  RCPTLine, afterRCPTLine = s.split( '\r\n', 1 ) #Splits off current RCPT line, for recursion purposes.
+
+  uselessString3, tempString2 = RCPTLine.split( '<', 1 )   
+  rcptAddress, uselessString4 = tempString2.split( '>', 1 )  #seperates the receipt address from 
+                                                                #brackets, stores it in "rcptAddress"
+
+
+  print('RCPT TO: <' + rcptAddress + '>')
+
+  response2 = raw_input()                   #wait for response from server, then handle it in next line
+  responseHandler250(response2)
+
+  nextRCPTLocation = afterRCPTLine.find("To:")  #find the next to token
+
+
+  if nextRCPTLocation != -1 and nFL != -1 and nextRCPTLocation < nFL: #if there's another RCPT in the same message,
+                                                                        #AND there's more messages in the file.
+    nextFromLocation = afterRCPTLine.find("From:")  #reset the nFL parameter; its location has changed now.                                     
+    return RCPTParser(afterRCPTLine, nextFromLocation)
+
+  elif nFL == -1 and nextRCPTLocation != -1:    #if there's another RCPT in the same message,
+                                                  #AND there's only one message in the file
+    nextFromLocation = afterRCPTLine.find("From:")  #reset the nFL parameter; its location has changed now.                                     
+    return RCPTParser(afterRCPTLine, nextFromLocation)
+
   else:
-    return 0
+    return afterRCPTLine   #Return a string with everything in the message after the last RCPT Line
 
 
 def main():
 
 
-#  try:
- #   while 1:                #accept input, parse it, and provide output in a loop.
 
   f = open(sys.argv[1],"r")
   fwFile = f.read()
