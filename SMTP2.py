@@ -5,13 +5,6 @@
 #the program respons with 'hello'....should my program quit?  Or just chill?
 #Or, what happens if I type '354' when it expects a '250'?
 
-#Do I need the while and try loops in the bottom?  Like, is there just going to be one argument?  
-#I think so...
-
-#Debug case:  when use clicks control D randomly
-
-#Need to fix blank line that comes between message body and period when printing...only happens sometimes.
-
 
 #seperate at the space, then check if space exists, and check to left of space.
 
@@ -82,17 +75,25 @@ def responseHandler250(s):
 #echo to standard error
   print >> sys.stderr, s
 
+#split the string at the first space
+  sList = s.split()
+
 #check if an acceptable response was returned
-  if s[:3] != '250':
+  if sList[0] != '250':
     print("QUIT")
     sys.exit()
+
+
 
 def responseHandler354(s):
 #echo to standard error
   print >> sys.stderr, s
 
+#split the string at the first space
+  sList = s.split()
+
 #check if an acceptable response was returned
-  if s[:3] != '354':
+  if sList[0] != '354':
     print("QUIT")
     sys.exit()
 
