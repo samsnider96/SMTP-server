@@ -70,11 +70,11 @@ def messageParser(s):
     sys.exit()
   else:
     messageToPrint, nextMessage = afterLine2.split("From:", 1)  #Locate beginning of next message
-    print(messageToPrint)
-    print('.')
+    print(messageToPrint + '.')
+ #   print('.')
     response4 = raw_input()                   #wait for response from server, then handle it in next line
     responseHandler250(response4)
-    messageParser(nextMessage)     
+    messageParser(nextMessage)          #Recursion that begins next message in the file.
 
 
 
