@@ -1,12 +1,5 @@
-#does "MAIL FROM:', 'QUIT', etc need to go to standard error instead of output??
-#Should printing 'DATA' be conditional?
-
-#Can I assume that the server will respond with only valid response numbers?  For example, what if 
-#the program respons with 'hello'....should my program quit?  Or just chill?
-#Or, what happens if I type '354' when it expects a '250'?
-
-
-#seperate at the space, then check if space exists, and check to left of space.
+#This program acts as the Server side of the SMTP protocol.  For now, it will take standard input
+#instead of recieving messages from the client.
 
 import sys
 import string
@@ -14,24 +7,24 @@ import os
 
 def messageParser(s):
 
-    #################################  first line #################################
+     #################################  start of first line #################################
 
 
-  line1, afterLine1 = s.split( '\r\n', 1 )   #seprates the first line of fwFile
+  line1, afterLine1 = s.split( '\r\n', 1 )   #seperates the first line of the forward-File.
 
   uselessString1, tempString1 = line1.split( '<', 1 )   
-  fromAddress, uselessString2 = tempString1.split( '>', 1 )
+  fromAddress, uselessString2 = tempString1.split( '>', 1 )  #Seperates the mailbox string from the first line.
 
 
   print('MAIL FROM: <' + fromAddress + '>')
 
 
-  response1 = raw_input()                   #wait for response from server, then handle it in next line
+  response1 = raw_input()                   
   responseHandler250(response1)
 
 
-    #################################  second line #################################
 
+     #################################  start of second line #################################
 
 
   nextFromLocation = afterLine1.find("From:")  #find the next from token, meaning, the next message.
@@ -39,30 +32,30 @@ def messageParser(s):
   afterLastRCPT = RCPTParser(afterLine1, nextFromLocation) #Call RCPTParser, a recursive function that will 
                                                             #handle the rest of RCPT parsing.
 
-    #################################  DATA section #################################
+
+     #################################  start of DATA section #################################
 
   print('DATA')
 
-  response3 = raw_input()                   #wait for response from server, then handle it in next line
+  response3 = raw_input()                   
   responseHandler354(response3)
 
-
+#Case 1: runs if the currently processing message is the last message in the forward file.
   if nextFromLocation == -1:
     print afterLastRCPT
     print('.')
 
-    response4 = raw_input()                   #wait for response from server, then handle it in next line
+    response4 = raw_input()                  
     responseHandler250(response4)
     
     print("QUIT")
     sys.exit()
 
+#Case 2: runs if there are more messages to parse later on in the forward file.  It's recursive.
   else:
-#    print afterLastRCPT
     messageToPrint, nextMessage = afterLastRCPT.split("From:", 1)  #Locate beginning of next message
     print(messageToPrint + '.')
- #   print('.')
-    response4 = raw_input()                   #wait for response from server, then handle it in next line
+    response4 = raw_input()                   
     responseHandler250(response4)
     messageParser(nextMessage)          #Recursion that begins next message in the file.
 
@@ -84,7 +77,6 @@ def responseHandler250(s):
     sys.exit()
 
 
-
 def responseHandler354(s):
 #echo to standard error
   print >> sys.stderr, s
@@ -99,54 +91,53 @@ def responseHandler354(s):
 
 
 
+def RCPTParser(s, nFL): 
 
-def RCPTParser(s, nFL): #parameters: "s" is a string starting at the current line of RCPT 
-                          #parsing, and "nFL" (nextFromLine) is the integer location of 
-                          #the beginning of the next message in "s".
+#parameters: "s" is a string starting at the current line of RCPT 
+  #parsing, and "nFL" (nextFromLine) is the integer location of 
+  #the very next "From:" string in "s".
+
 
   RCPTLine, afterRCPTLine = s.split( '\r\n', 1 ) #Splits off current RCPT line, for recursion purposes.
 
   uselessString3, tempString2 = RCPTLine.split( '<', 1 )   
-  rcptAddress, uselessString4 = tempString2.split( '>', 1 )  #seperates the receipt address from 
-                                                                #brackets, stores it in "rcptAddress"
-
+  rcptAddress, uselessString4 = tempString2.split( '>', 1 )   #Seperates the mailbox string from the first line.                                                             
 
   print('RCPT TO: <' + rcptAddress + '>')
 
-  response2 = raw_input()                   #wait for response from server, then handle it in next line
+
+  response2 = raw_input()                   
   responseHandler250(response2)
 
-  nextRCPTLocation = afterRCPTLine.find("To:")  #find the next to token
 
+  nextRCPTLocation = afterRCPTLine.find("To:")  #find the next "To:" token, in order to compare it to next "From:" token.
 
-  if nextRCPTLocation != -1 and nFL != -1 and nextRCPTLocation < nFL: #if there's another RCPT in the same message,
-                                                                        #AND there's more messages in the file.
-    nextFromLocation = afterRCPTLine.find("From:")  #reset the nFL parameter; its location has changed now.                                     
+#Case 1:  if there's another RCPT in the same message, AND there's more messages in the file.
+  if nextRCPTLocation != -1 and nFL != -1 and nextRCPTLocation < nFL: 
+    
+    nextFromLocation = afterRCPTLine.find("From:")    #reset the nFL parameter; its location has changed now.                                     
     return RCPTParser(afterRCPTLine, nextFromLocation)
 
-  elif nFL == -1 and nextRCPTLocation != -1:    #if there's another RCPT in the same message,
-                                                  #AND there's only one message in the file
-    nextFromLocation = afterRCPTLine.find("From:")  #reset the nFL parameter; its location has changed now.                                     
+
+
+#Case 2:  if there's another RCPT in the same message, AND there's only one message in the file
+  elif nFL == -1 and nextRCPTLocation != -1:    
+    
+    nextFromLocation = afterRCPTLine.find("From:")    #reset the nFL parameter; its location has changed now.                                     
     return RCPTParser(afterRCPTLine, nextFromLocation)
 
+#Case 3:  All RCPT-line parsing and recursion is done.
   else:
-    return afterRCPTLine   #Return a string with everything in the message after the last RCPT Line
+    return afterRCPTLine   #Return a string with everything in the forward file after the last RCPT Line.
 
 
 def main():
 
-
-
-  f = open(sys.argv[1],"r")
+  f = open(sys.argv[1],"r")    #Accept one forward file as a command line argument
   fwFile = f.read()
   f.close()             #fwFile is the entire forward file.
 
   messageParser(fwFile)
-
-#      except EOFError:
- #       print("QUIT")
- #       sys.exit()
-
 
 
 
