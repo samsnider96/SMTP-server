@@ -10,7 +10,7 @@ def messageParser(s):
      #################################  start of first line #################################
 
 
-  line1, afterLine1 = s.split( '\r\n', 1 )   #seperates the first line of the forward-File.
+  line1, afterLine1 = s.split( '\n', 1 )   #seperates the first line of the forward-File.
 
   uselessString1, tempString1 = line1.split( '<', 1 )   
   fromAddress, uselessString2 = tempString1.split( '>', 1 )  #Seperates the mailbox string from the first line.
@@ -42,8 +42,7 @@ def messageParser(s):
 
 #Case 1: runs if the currently processing message is the last message in the forward file.
   if nextFromLocation == -1:
-    print afterLastRCPT
-    print('.')
+    print(afterLastRCPT + '.')
 
     response4 = raw_input()                  
     responseHandler250(response4)
@@ -98,7 +97,7 @@ def RCPTParser(s, nFL):
   #the very next "From:" string in "s".
 
 
-  RCPTLine, afterRCPTLine = s.split( '\r\n', 1 ) #Splits off current RCPT line, for recursion purposes.
+  RCPTLine, afterRCPTLine = s.split( '\n', 1 ) #Splits off current RCPT line, for recursion purposes.
 
   uselessString3, tempString2 = RCPTLine.split( '<', 1 )   
   rcptAddress, uselessString4 = tempString2.split( '>', 1 )   #Seperates the mailbox string from the first line.                                                             
@@ -129,6 +128,8 @@ def RCPTParser(s, nFL):
 #Case 3:  All RCPT-line parsing and recursion is done.
   else:
     return afterRCPTLine   #Return a string with everything in the forward file after the last RCPT Line.
+
+
 
 
 def main():
