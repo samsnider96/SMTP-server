@@ -1,4 +1,4 @@
-#This program acts as the Server side of the SMTP protocol.  For now, it will take standard input
+#This program acts as the SERVER side of the SMTP protocol.  For now, it will take standard input
 #instead of recieving messages from the client.
 
 import sys

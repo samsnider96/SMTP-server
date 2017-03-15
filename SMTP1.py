@@ -1,5 +1,5 @@
-#This program will parse string commands and determine if they're valid SMTP commands.
-#validates the 'MAIL FROM', 'RCPT TO', and 'DATA' commands.
+#This program acts as the CLIENT side of the SMTP protocol. 
+#It will parse string commands and determine if they're valid SMTP commands.
 
 import sys
 import string
@@ -327,10 +327,6 @@ def dataParser(s, l):
 
 
 
-
-
-
-
 def error500(): 
     print '500 Syntax error: command unrecognized'
     return
@@ -346,14 +342,7 @@ def error503():
 
 
 
-
-
-
-
-
 def main():
-
-
 
   try:
     while 1:                #accept input, parse it, and provide output in a loop.
