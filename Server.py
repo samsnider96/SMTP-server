@@ -5,42 +5,6 @@ import sys
 import string
 import os
 
-
-
-
-def socketConnector(pN):
-  #create "welcoming socket".  pN is the port number
-
-  clientName = 'classroom.cs.unc.edu'
-  greetingMssg = '220 greetings from snapper.cs.edu'
-
-  serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-  serverSock.bind( ('', pN) ) #create the TCP welcoming socket
-  serverSock.listen(1)  #start listening for incoming requests
-
-  while True:   #(servers are 'always running')
-    connectionSock, addr = serverSock.accept() #creates a new socket when a request comes in
-    connectionSock.send( greetingMssg.encode() )
-    heloMssg = connectionSock.recv(1024)  #recieve the helo message
-#    print( heloResponse.decode() )  #this is for testing
-    helloResponse = '250 ' + helloMssg.decode() + 'pleased to meet you.'
-    connectionSock.send( helloResponse.encode() )
-    connectionSock.close()
-
-    #old code:
-#  welcomeSock.connect( (clientName, pN) )
-#  welcomeSock.send( greetingMssg.encode() )
-#  heloResponse = welcomeSock.recv(1024)
-#  print( heloResponse.decode() )
-#  welcomeSock.close()
-
-
-#if HELO message is propper, ...
-
-  #then create special socket just for the client
-
-
 def textParser(s):
   return
 
@@ -52,7 +16,57 @@ def main():
   portNum = int( sys.argv[1] )
 
 
-  socketConnector(portNum)
+  clientName = 'classroom.cs.unc.edu'
+  greetingMssg = '220 greetings from snapper.cs.edu'
+
+  serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+  serverSock.bind( ('', portNum) ) #create the TCP welcoming socket
+  serverSock.listen(1)  #start listening for incoming requests
+
+  while True:   #(servers are 'always running')
+    connectionSock, addr = serverSock.accept() #creates a new socket when a request comes in
+    connectionSock.send( greetingMssg.encode() )
+    heloMssg = connectionSock.recv(1024)  #recieve the helo message
+    print( heloMssg.decode() )  #this is for testing
+    heloResponse = '250 ' + heloMssg.decode() + ' pleased to meet you.'
+    connectionSock.send( heloResponse.encode() )
+
+#Do I need to parse the Helo message?
+
+
+
+#begin recieving email message
+  
+    rcptAddresses[]
+
+    temp1 = connectionSock.recv(1024)
+    fromAddress = temp1.decode()
+    connectionSock.send( '250'.encode() )
+
+    temp2 = connectionSock.recv(1024)
+    rcptAddresses[0] = temp2.decode()
+    connectionSock.send( '250'.encode() )
+
+#NEED TO TEST capability to accept other rcpt addresses
+    while(1)
+      i = 1
+      rcptAddresses[i] = connectionSock.recv(1024)
+      rcptAddresses[i].decode()
+      if rcptAddresses[i].strip() == 'DATA':
+        del rcptAddresses[i]
+        break
+      else:
+        connectionSock.send( '250'.encode() )
+
+
+      connectionSock.send( '354'.encode() )
+
+
+
+    connectionSock.close()
+
+
 
 
 

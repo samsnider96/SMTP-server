@@ -79,42 +79,36 @@ def pathParser(s, l):
 
   return 1
 
-def error500(): 
-  print 'Syntax error: command unrecognized'
-  return
 
 def error501(): 
   print 'Syntax error in parameters or arguments'
   return
 
-def error503(): 
-  print 'Bad sequence of commands'
-  return
 
 def endOfTxtChecker(s):
 
-  if s == '.\r':
+  if s == '.\n':
     return 1
 
   return 0
 
-#def greeetingMssgChecker(s): #checks if the greeting message is legit
+def responseHandler250(s):
+#split the string at the first space
+  sList = s.split()
 
+#check if an acceptable response was returned
+  if sList[0] != '250':
+    print("message from client does not conform to SMTP protocol.  connection closed.")
+    return 1
 
-# def socketConnector(h, p): #arguments: host name and port numberd
+def responseHandler354(s):
+#split the string at the first space
+  sList = s.split()
 
-#   heloMssg = 'HELO\r' #...I tHINK need to change this later on but will leave it for now.
-
-#   clientSock = socket(AF_INET, SOCK_STREAM)  #create the socket
-
-#   clientSock.connect( (h,p) )         #connect to the server
-#   greetingMssg = clientSock.recv(1024)   #recieve the greeting message
-
-#   clientSock.send( heloMssg.encode() )
-#   clientsock.recv(1024)  #recieve the hello response message
-#   clientSock.close()
-
-
+#check if an acceptable response was returned
+  if sList[0] != '354':
+    print("message from client does not conform to SMTP protocol.  connection closed.")
+    return 1
 
 def main():
 
@@ -143,7 +137,7 @@ def main():
 
         print 'From:'
 
-        inVarMF = raw_input() + '\r'    
+        inVarMF = raw_input() + '\n'    
         inListMF = list(inVarMF)
 
 
@@ -153,7 +147,7 @@ def main():
 
         print 'To:'
 
-        inVarRC = raw_input() + '\r'     
+        inVarRC = raw_input() + '\n'     
 
         rcptPaths = inVarRC.split(',')
 
@@ -168,7 +162,7 @@ def main():
 
 
       print 'Subject:'
-      inVarSubject = raw_input() + '\r'
+      inVarSubject = raw_input() + '\n'
 
       print 'Message:'
 
@@ -176,7 +170,7 @@ def main():
 
       while stillTakingText == 1:   #text input loop:
             
-        inVarTxt = raw_input() + '\r'  
+        inVarTxt = raw_input() + '\n'  
 
 
         if endOfTxtChecker(inVarTxt) == 0:
@@ -191,17 +185,17 @@ def main():
 
 
 #prepare variables to send through the socket
-      heloMssg = 'HELO\r' #...I tHINK need to change this later on but will leave it for now.
-      fromAddressForHeader = 'MAIL FROM: ' + '<' + inVarMF + '>' + '\r'
+      heloMssg = 'HELO/n' #...I tHINK need to change this later on but will leave it for now.
+      fromAddressForHeader = 'MAIL FROM: ' + '<' + inVarMF + '>' + '\n'
       rcptAddressesForHeader = rcptPaths[:]
       for j in rcptAddressesForHeader:
-        j = 'RCPT TO: ' + '<' + j + '>' + '\r'
+        j = 'RCPT TO: ' + '<' + j + '>' + '\n'
       data = 'DATA'
-      fromAddressForLaterInHeader = 'From: ' + '<' + inVarMF + '>' + '\r'
+      fromAddressForLaterInHeader = 'From: ' + '<' + inVarMF + '>' + '\n'
       rcptAddressesForLaterInHeader = rcptPaths[:]
       for k in rcptAddressesForLaterInHeader:
-        k = 'To: ' + '<' + k + '>' + '\r'
-      subjectLine = 'Subject: ' + inVarSubject + '\r\r'
+        k = 'To: ' + '<' + k + '>' + '\n'
+      subjectLine = 'Subject: ' + inVarSubject + '\n'
       quit = 'QUIT'
 
 
@@ -211,16 +205,35 @@ def main():
 
 #handshaking
       greetingMssg = clientSock.recv(1024)   #recieve the greeting message from server
+      print greetingMssg.decode()  #this is for testing
       clientSock.send( heloMssg.encode() ) #send the initial HELO message
-      clientsock.recv(1024)  #recieve the HELO response message
+      heloResponse = clientSock.recv(1024)  #recieve the HELO response message
+      print heloResponse #this is for testing
 
-#send the email through the socket
-      clientSock.send( fromAddressForHeader.edncode() )
-      for i in rcptPathsForHeader:
+#send the header of the email through the socket
+      clientSock.send( fromAddressForHeader.encode() )
+      response1 = clientSock.recv(1024)
+      if responseHandler250(response1) == true:
+        clientSock.close()
+        continue
+
+      for i in rcptAddressesForHeader:
         clientSock.send( i.encode() )
+        response2 = clientSock.recv(1024)
+        if responseHandler250(response2) == true:
+          clientSock.close()
+          break        #I need a double continue here, somehow....
+
       clientSock.send( data.encode() )
+      if responseHandler354(response1) == true:
+        clientSock.close()
+        continue
+
+      clientSock.send( '\n'.encode() )
+
+#send the body of the email through the socket
       clientSock.send( fromAddressForLaterInHeader.encode() )
-      for y in rcptPathsForLaterInHeader:
+      for y in rcptAddressesForLaterInHeader:
         clientSock.send( y.encode() )
       clientSock.send( subjectLine.encode() )
       clientSock.send( allText.encode() )

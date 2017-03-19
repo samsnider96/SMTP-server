@@ -209,7 +209,7 @@ def pathParser(s, l):    #This multipurpose path parser is for use in both MAIL 
 
 def endOfTxtChecker(s):
 
-  if s == '.\r':
+  if s == '.\n':
     return 1
 
   return 0
@@ -358,10 +358,10 @@ def main():
 
       while stateCheckerMF == 0:        #MAIL FROM parse:
 
-        inVarMF = raw_input() + '\r\n'    
+        inVarMF = raw_input() + '\n'    
         inListMF = list(inVarMF)
 
-        print inVarMF[0:inVarMF.index('\r')]
+        print inVarMF[0:inVarMF.index('\n')]
 
 
         if dataChecker(inVarMF, inListMF) == 1: #Tried data command out of order
@@ -381,10 +381,10 @@ def main():
       while stateCheckerRC == 0:      #RCPT TO parse:
 
 
-        inVarRC = raw_input() + '\r\n'     
+        inVarRC = raw_input() + '\n'     
         inListRC = list(inVarRC)
 
-        print inVarRC[0:inVarRC.index('\r')]
+        print inVarRC[0:inVarRC.index('\n')]
 
 
         if dataChecker(inVarRC, inListRC) == 1 and oneOrMoreRC == 0: #Tried data command out of order
@@ -420,9 +420,9 @@ def main():
 
       while stillTakingText == 1:   #text input loop:
             
-        inVarTxt = raw_input() + '\r'  
+        inVarTxt = raw_input() + '\n'  
 
-        print inVarTxt[0:inVarTxt.index('\r')]
+        print inVarTxt[0:inVarTxt.index('\n')]
 
         if endOfTxtChecker(inVarTxt) == 0:
           allText += inVarTxt
@@ -437,9 +437,9 @@ def main():
 
       for i in paths:
         f = open('forward/' + i, 'a+')
-        f.write('From: ' + '<' + inVarMF[startMF:endMF] + '>' + '\r')
+        f.write('From: ' + '<' + inVarMF[startMF:endMF] + '>' + '\n')
         for j in paths:
-          f.write('To: ' + '<' + j + '>' + '\r')
+          f.write('To: ' + '<' + j + '>' + '\n')
         f.write(allText)
         f.close()
 
