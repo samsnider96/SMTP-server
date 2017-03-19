@@ -209,7 +209,7 @@ def pathParser(s, l):    #This multipurpose path parser is for use in both MAIL 
 
 def endOfTxtChecker(s):
 
-  if s == '.\r\n':
+  if s == '.\r':
     return 1
 
   return 0
@@ -420,7 +420,7 @@ def main():
 
       while stillTakingText == 1:   #text input loop:
             
-        inVarTxt = raw_input() + '\r\n'  
+        inVarTxt = raw_input() + '\r'  
 
         print inVarTxt[0:inVarTxt.index('\r')]
 
@@ -437,9 +437,9 @@ def main():
 
       for i in paths:
         f = open('forward/' + i, 'a+')
-        f.write('From: ' + '<' + inVarMF[startMF:endMF] + '>' + '\r\n')
+        f.write('From: ' + '<' + inVarMF[startMF:endMF] + '>' + '\r')
         for j in paths:
-          f.write('To: ' + '<' + j + '>' + '\r\n')
+          f.write('To: ' + '<' + j + '>' + '\r')
         f.write(allText)
         f.close()
 
