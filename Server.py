@@ -42,11 +42,11 @@ def main():
 
     temp1 = connectionSock.recv(1024)
     fromAddress = temp1.decode()
-    connectionSock.send( '250'.encode() )
+    connectionSock.send( '250 OK'.encode() )
 
     temp2 = connectionSock.recv(1024)
     rcptAddresses[0] = temp2.decode()
-    connectionSock.send( '250'.encode() )
+    connectionSock.send( '250 OK'.encode() )
 
 #NEED TO TEST capability to accept other rcpt addresses
     while(1)
@@ -57,7 +57,7 @@ def main():
         del rcptAddresses[i]
         break
       else:
-        connectionSock.send( '250'.encode() )
+        connectionSock.send( '250 OK'.encode() )
 
 
       connectionSock.send( '354'.encode() )
