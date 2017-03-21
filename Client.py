@@ -196,7 +196,7 @@ def main():
 
   #handshaking variables
       hostNameOfClient = socket.gethostname()
-      heloMssg = 'HELO' + hostNameOfClient + '\n' #...I tHINK need to change this later on but will leave it for now.
+      heloMssg = 'HELO ' + hostNameOfClient + '\n' #...I tHINK need to change this later on but will leave it for now.
 
   #header variables
       fromAddressForHeader = 'MAIL FROM: ' + '<' + inVarMF + '>' + '\n'
@@ -226,10 +226,10 @@ def main():
 
 #handshaking
       greetingMssg = clientSock.recv(1024)   #recieve the greeting message from server
-      print greetingMssg.decode()  #this is for testing
+#      print greetingMssg.decode()  #this is for testing
       clientSock.send( heloMssg.encode() ) #send the initial HELO message
       heloResponse = clientSock.recv(1024)  #recieve the HELO response message
-      print heloResponse #this is for testing
+#      print heloResponse #this is for testing
 
 
 
@@ -241,6 +241,8 @@ def main():
       if responseHandler250( response1.decode() ) == True:
         clientSock.close()
         sys.exit()
+      print 'done sending from addresses'
+
 
   #RCPT part
       for i in rcptAddressesForHeader:
