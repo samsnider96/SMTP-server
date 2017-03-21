@@ -159,8 +159,7 @@ def main():
               o = o.replace('\t', '', 1)
             else:
               break
-          # o = o.replace(' ', '')
-          # o = o.replace('\t', '')
+
           inListRC = list(o)
           if pathParser(o, inListRC) == 1:
             rcptPaths.append(o)
@@ -169,8 +168,6 @@ def main():
           stateCheckerRC = 1
 
 
-      print 'so now the list of paths is:'
-      print rcptPaths
 
 #accept input: subject
       print 'Subject:'
@@ -226,10 +223,8 @@ def main():
 
 #handshaking
       greetingMssg = clientSock.recv(1024)   #recieve the greeting message from server
-#      print greetingMssg.decode()  #this is for testing
       clientSock.send( heloMssg.encode() ) #send the initial HELO message
       heloResponse = clientSock.recv(1024)  #recieve the HELO response message
-#      print heloResponse #this is for testing
 
 
 
@@ -241,7 +236,6 @@ def main():
       if responseHandler250( response1.decode() ) == True:
         clientSock.close()
         sys.exit()
-      print 'done sending from addresses'
 
 
   #RCPT part
@@ -255,29 +249,22 @@ def main():
   #354 recieved, need to start in on data part
         if responseHandler250( response2.decode() ) == True and responseHandler354( response3.decode() ) == False:
           break
-         
-      print 'done sending rcpt addresses'
-
 
       clientSock.send( data.encode() )
-      print 'data command sent'
       response3 = clientSock.recv(1024)
+
   #error handling
       if responseHandler354( response3.decode() ) == True:
         clientSock.close()
         sys.exit()
 
-      print '354 recieved'
-
-        
 
 
 #send the body of the email through the socket
+      mssgBody = mssgBody + '.\n'
       clientSock.send( mssgBody.encode() )
-      print 'message body sent'
 
       response4 = clientSock.recv(1024)
-      print '250 from mesage body recieved'
 
   #error handling
       if responseHandler250( response4.decode() ) == True:
@@ -286,11 +273,9 @@ def main():
 
 
       clientSock.send( quit.encode() )
-      print 'quit sent'
 
 #job is done.  Close socket and exit program.
       clientSock.close()
-      print 'connection closed'
       sys.exit()
 
   except EOFError:

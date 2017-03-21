@@ -8,17 +8,11 @@ import os
 
 def mFParser(s, l):  
 
-
-        #################################  Beginning of MAIL FROM #############################
-
-
   colonCheck = s.find(':', 1)   
   if colonCheck == -1:      #locates the colon string, and makes sure it's not missing.
     return 500
 
   mailFromStr, rvsPathStr = s.split( s[colonCheck], 1 )   #Splits the input string at the colon.
-
-
 
   mailStr = mailFromStr[:5]     #seperates off the 'mail' str, and checks it  
   if mailStr != 'MAIL ':
@@ -27,9 +21,6 @@ def mFParser(s, l):
   fromStr = mailFromStr[-4:]        #seperates off the 'from' str, and checks it
   if fromStr != 'FROM':
     return 500
-
-
-
 
   afterMailStr = mailFromStr[4:] #creates a string that's everything after 'MAIL'
   blankSpaceL = list(afterMailStr)  #creates a list from the String in previous line
@@ -43,26 +34,17 @@ def mFParser(s, l):
 
   pathListMF = list(rvsPathStr) 
    
-  return pathParser(rvsPathStr, pathListMF) 
-
-
-
+  return pathParser(rvsPathStr, pathListMF)
 
 
 
 def rCParser(s, l):     #Parses the RCPT-TO string.
-
-
-        #################################  Beginning of RCPT-TO #############################
-
-
 
   colonCheck = s.find(':', 1)   
   if colonCheck == -1:      #locates the colon string, and makes sure it's not missing.
     return 500
 
   rcptToStr, forwardPathStr = s.split( s[colonCheck], 1 )   #Splits the input string at the colon.
-
 
   rcptStr = rcptToStr[:5]     #seperates off the 'RCPT' str, and checks it  
   if rcptStr != 'RCPT ':
@@ -71,7 +53,6 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
   toStr = rcptToStr[-2:]        #seperates off the 'TO' str, and checks it
   if toStr != 'TO':
     return 500
-
 
   afterRcptStr = rcptToStr[4:] #creates a string that's everything after 'RCPT'
   blankSpaceL2 = list(afterRcptStr)  
@@ -86,13 +67,6 @@ def rCParser(s, l):     #Parses the RCPT-TO string.
   pathListRc = list(forwardPathStr) 
 
   return pathParser(forwardPathStr, pathListRc)  
-
-
-
-
-
-
-
 
 
 
@@ -158,7 +132,7 @@ def pathParser(s, l):    #This multipurpose path parser is for use in both MAIL 
       break
 
 
-          #################################  End of Path #################################
+          #################################  End of Path and space after it #################################
   
   endPathChck = s.find('>', 1)    
   if endPathChck == -1:     #locates the '>' character, and makes sure it's not missing.
@@ -172,8 +146,6 @@ def pathParser(s, l):    #This multipurpose path parser is for use in both MAIL 
       return 501
       break
 
-          #################################  final part of "rcpt-to-cmd" #################################
-
   prePathClose, postPath = s.split('>', 1)    #postPaths is everything after the '>' character.
   postPathL = list(postPath)
  
@@ -181,14 +153,19 @@ def pathParser(s, l):    #This multipurpose path parser is for use in both MAIL 
     if b != '\r' and b != '\n' and b != '\t' and b != ' ':
       return 501    
 
-          #################################  End of RCPT-TO parsing #################################
-
   return 1
 
 
 
 
-def MFChecker(s):  #for use in the state machine in main method
+
+
+
+
+
+
+
+def MFChecker(s):  #checks if the parameter is a MAIL FROM command
 
   colonCheck = s.find(':', 1)   
   if colonCheck == -1:      #locates the colon string, and makes sure it's not missing.
@@ -206,7 +183,6 @@ def MFChecker(s):  #for use in the state machine in main method
 
   return 1
 
-
   afterMailStr = mailFromStr[4:] #creates a string that's everything after 'MAIL'
   blankSpaceL = list(afterMailStr)  #creates a list from the String in previous line
 
@@ -219,7 +195,7 @@ def MFChecker(s):  #for use in the state machine in main method
 
 
 
-def RCChecker(s):
+def RCChecker(s):  #checks if the parameter is a RCPT-TO command
 
   colonCheck = s.find(':', 1)   
   if colonCheck == -1:      #locates the colon string, and makes sure it's not missing.
@@ -248,10 +224,7 @@ def RCChecker(s):
       break
 
 
-
-
-
-def dataChecker(s):  #data cheker is the same as data parser, but simply doesn't print error messages.
+def dataChecker(s):  #checks if the parameter is a DATA command
 
   spaceCheck = s.find(' ', 1) 
 
@@ -272,6 +245,12 @@ def dataChecker(s):  #data cheker is the same as data parser, but simply doesn't
           return 0 
 
   return 1
+
+
+
+
+
+
 
 
 
@@ -296,14 +275,14 @@ def main():
 
       connectionSock.send( greetingMssg.encode() )
       heloMssg = connectionSock.recv(1024)  
-      heloResponse = '250 ' + heloMssg.decode() + ' pleased to meet you.'
+      heloResponse = '250 ' + heloMssg.decode() + 'pleased to meet you.'
       connectionSock.send( heloResponse.encode() )
 
   #Do I need to parse the Helo message?
 
 
 
-  #begin recieving email headers
+#begin recieving email headers
   #begin recieving MF
       rcptAddressesForHeader = []
 
@@ -334,23 +313,19 @@ def main():
 
       connectionSock.send( '250 OK'.encode() )
 
-      print 'done taking from address:' + fromAddressForHeader
-
-
-  #begin recieving RCPT
-    #first
+#begin recieving RCPT
+  #first
       temp2 = connectionSock.recv(1024)
       firstToAddress = temp2.decode()
 
-
-  #dataChecker, MFChecker
+    #dataChecker, MFChecker
       if dataChecker(firstToAddress) == 1 or MFChecker(firstToAddress) == 1:
         print 'Bad sequence of commands recieved from client'
         connectionSock.send( '503 Bad sequence of commands'.encode() )
         connectionSock.close()
         break
 
-  #rCParser
+    #rCParser
       inListRC = list(firstToAddress)
       if rCParser(firstToAddress, inListRC) == 500:
         print 'unrecognized command recieved from client'
@@ -365,13 +340,10 @@ def main():
         break
 
 
-
-     #data checker AND oneormore = false
-
-
       rcptAddressesForHeader.append( firstToAddress )
       connectionSock.send( '250 OK'.encode() )
-    #after first
+
+  #after first
       while(1):
         thisAddress = connectionSock.recv(1024)
         thisAddress.decode()
@@ -386,54 +358,48 @@ def main():
           rcptAddressesForHeader.append(thisAddress)
           connectionSock.send( '250 OK'.encode() )
 
-      print 'done taking to addresses:'
-      print rcptAddressesForHeader
 
-
-  #begin recieve message body
+#begin recieving message body
       connectionSock.send( '354'.encode() )
-
-      print '354 sent'
 
       temp3 = connectionSock.recv(1024)
       mssgBody = temp3.decode()
-
-      print 'done taking mssg body:' + mssgBody
+      mssgBody = mssgBody[:-2]
 
       connectionSock.send( '250 OK'.encode() )
-      print '250 after message body sent'
 
-
+#recieve QUIT
       temp4 = connectionSock.recv(1024)
       # if temp4.decode().split() == 'QUIT'
       #   connectionSock.close()
 
-      print 'done taking quit message'
-
-
       connectionSock.close()
 
-      print 'connection has been closed.  now to send to forward file.'
-
-  #need to add proccessing here to establish how many domains there will be
+#seperate out a list of domains to serve as the names of the forward files
       domains = []
-      print 'the rcptAddressesForHeader array is:'
-      print rcptAddressesForHeader
       for k in rcptAddressesForHeader:
         preAt, postAtStr = k.split('@', 1)    #postAtStr string is everything after the '@' character.
         targetString, uselessString = postAtStr.split('>', 1)
         domains.append(targetString)
 
-      print 'domains added to array:'
-      print domains
 
-  #write to forward file
+#prepare from address for forward file
+      startMF = fromAddressForHeader.find('<', 1) + 1
+      endMF = fromAddressForHeader.find('>', 1)
+      MFForForwardFile = fromAddressForHeader[startMF:endMF]
+
+#write to forward file
       for i in domains:
         f = open('forward/' + i, 'a+')
+        f.write('From: ' + '<' + MFForForwardFile + '>' + '\n')
+        for n in rcptAddressesForHeader:
+          startRC = n.find('<', 1) + 1
+          endRC = n.find('>', 1)
+          n = n[startRC:endRC]
+          f.write('To: ' + '<' + n + '>' + '\n')
         f.write(mssgBody)
         f.close()
 
-      print 'forward files addded'
 
     except:
       print 'the server encountered a socket error.'
