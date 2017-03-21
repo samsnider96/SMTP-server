@@ -17,12 +17,10 @@ def pathParser(s, l):
 
 
 
-          #################################  mailbox #################################
-  
+#check the mailbox
 
   atCheck = s.find('@')   
   if atCheck == -1:     #locates the @ char, and makes sure it's not missing.
-    print '1'
     errorSmtpSyntax()
     return 0
 
@@ -32,17 +30,15 @@ def pathParser(s, l):
     if i == '@':
       break
     if i==' ' or i=='<' or i=='>' or i=='(' or i==')' or i=='[' or i==']' or i=='\\' or i=='.' or i==',' or i==';' or i==':' or i=='\"':
-      print '2'
       errorSmtpSyntax()
       return 0
       break
 
-          #################################  domain #################################
+#check the domain
 
   preAt, postAtStr = s.split('@', 1)    #postAtStr string is everything after the '@' character.
 
   if postAtStr[0] not in string.ascii_letters:    #Checks very first domain char
-    print '3'
     errorSmtpSyntax()
     return 0
 
@@ -52,18 +48,12 @@ def pathParser(s, l):
     if postAtL[j] == '>' or postAtL[j] == ' ':
       break
     if (postAtL[j-1] == '.') and postAtL[j] not in string.ascii_letters:    #Checks the char directly after any '.'
-      print '4'
       errorSmtpSyntax()
       return 0
       break
-#    if postAtL[j].isdigit() == 0 and postAtL[j] != '.' and postAtL[j] not in string.ascii_letters:  #checks whole domain for wierd chars
- #     print '4.5'
-#      error501()
- #     return 0
- #     break
 
 
-          #################################  final part of "path" #################################
+#check the final part of the path
 
   if ' ' in s:
     prePathClose, postPath = s.split(' ', 1)    #postPaths is everything after the '>' character.
@@ -71,7 +61,6 @@ def pathParser(s, l):
  
     for b in postPathL:
       if b != '\r' and b != '\n' and b != '\t' and b != ' ':
-        print '5'
         errorSmtpSyntax()
         return 0    
 
@@ -82,33 +71,27 @@ def pathParser(s, l):
 
 
 
+
+
+
+
           ##########################  beginning small helper methods #################################
 
 def errorSmtpSyntax(): 
-  print 'Syntax error...your input does not conform to SMTP protocol.  Try again from the beginning.'
+  print 'Syntax error...your input does not conform to SMTP protocol.  Try again.'
   return
 
 def endOfTxtChecker(s):
-
   if s == '.\n':
     return 1
-
   return 0
 
 def responseHandler250(s):
-#split the string at the first space
- # sList = s.split()
-
-#check if an acceptable response was returned
   if s[:3] != '250':
     print 'message from server does not conform to SMTP protocol; 250 was expected.  connection will be closed.'
     return 1
 
 def responseHandler354(s):
-#split the string at the first space
-#  sList = s.split()
-
-#check if an acceptable response was returned
   if s[:3] != '354':
     print'message from server does not conform to SMTP protocol; 354 was expected.  connection will be closed.'
     return 1
@@ -135,14 +118,11 @@ def main():
     
   try:
     while 1:                
-      
+ 
+#prepare variables     
       paths = []
-      rcptPaths = []
-
-                              #set state machine variables:
       stateCheckerMF = 0
-      stateCheckerRC = 0
-      oneOrMoreRC = 0  #checks if there's been one or more valid RCPT TO commands
+      stateCheckerRC = 0  
       stillTakingText = 1
 
 
@@ -157,22 +137,46 @@ def main():
         if pathParser(inVarMF, inListMF) == 1:
           stateCheckerMF = 1
 
+#accept input: RCPT TO
 
+      while stateCheckerRC == 0:
         print 'To:'
+        
+        rcptPaths = []
 
         inVarRC = raw_input()     
 
-        rcptPaths = inVarRC.split(',')
+        initialRcptPaths = inVarRC.split(',')
 
-        for o in rcptPaths:
-          o = o.strip()
+        numberOfRcptPaths = len(initialRcptPaths)
+        numberOfCorrectRcptPaths = 0
+
+        for o in initialRcptPaths:
+          while(1):
+            if o[0] == ' ':
+              o = o.replace(' ', '', 1)
+            elif o[0] == '\t':
+              o = o.replace('\t', '', 1)
+            else:
+              break
+          # o = o.replace(' ', '')
+          # o = o.replace('\t', '')
           inListRC = list(o)
-          pathParser(o, inListRC)    #needa add functionality for multiple recipients
+          if pathParser(o, inListRC) == 1:
+            rcptPaths.append(o)
+            numberOfCorrectRcptPaths += 1
+        if numberOfCorrectRcptPaths == numberOfRcptPaths:
+          stateCheckerRC = 1
 
 
+      print 'so now the list of paths is:'
+      print rcptPaths
+
+#accept input: subject
       print 'Subject:'
-      inVarSubject = raw_input() + '\n'
+      inVarSubject = raw_input()
 
+#accept input: message body
       print 'Message:'
 
       allText = ''
@@ -181,7 +185,6 @@ def main():
             
         inVarTxt = raw_input() + '\n' 
 
-
         if endOfTxtChecker(inVarTxt) == 0:
           allText += inVarTxt
 
@@ -189,30 +192,33 @@ def main():
           stillTakingText = 0
 
 
-      startMF = inVarMF.find('<', 1) + 1
-      endMF = inVarMF.find('>', 1)
-
-
 #prepare variables to send through the socket
-      heloMssg = 'HELO' #...I tHINK need to change this later on but will leave it for now.
 
+  #handshaking variables
+      hostNameOfClient = socket.gethostname()
+      heloMssg = 'HELO' + hostNameOfClient + '\n' #...I tHINK need to change this later on but will leave it for now.
+
+  #header variables
       fromAddressForHeader = 'MAIL FROM: ' + '<' + inVarMF + '>' + '\n'
-      rcptAddressesForHeader = rcptPaths[:]
-      for j in rcptAddressesForHeader:
-        j = 'RCPT TO: ' + '<' + j + '>' + '\n'
+
+      rcptAddressesForHeader = []
+      for j in rcptPaths:
+        j = 'RCPT TO: ' + '<' + j + '>'
+        rcptAddressesForHeader.append(j)
 
       data = 'DATA'
 
-      fromAddressForLaterInHeader = 'From: ' + '<' + inVarMF + '>' + '\n'
-      rcptAddressesForLaterInHeader = rcptPaths[:]
+  #body variables
+      fromAddressForBody = 'From: ' + '<' + inVarMF + '>' + '\n'
+      rcptAddressesForBody = rcptPaths[:]
       allRcpts = ''
-      for k in rcptAddressesForLaterInHeader:
+      for k in rcptAddressesForBody:
         k = 'To: ' + '<' + k + '>' + '\n'
-        allRcpts + k
+        allRcpts  = allRcpts + k
       subjectLine = 'Subject: ' + inVarSubject + '\n\n'
-      mssgBody = fromAddressForLaterInHeader + allRcpts + subjectLine
+      mssgBody = fromAddressForBody + allRcpts + subjectLine + allText
 
-      quit = 'QUIT'
+      quit = 'QUIT\n'
 
 #create the client socket, connect to the server
       clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  
@@ -228,22 +234,23 @@ def main():
 
 
 #send the header of the email through the socket
+  #FROM part
       clientSock.send( fromAddressForHeader.encode() )
       response1 = clientSock.recv(1024)
-#error handling
+  #error handling
       if responseHandler250( response1.decode() ) == True:
-        print '1'
         clientSock.close()
         sys.exit()
 
+  #RCPT part
       for i in rcptAddressesForHeader:
         clientSock.send( i.encode() )
         response2 = clientSock.recv(1024)
-#error handling
+  #error handling
         if responseHandler250( response2.decode() ) == True and responseHandler354( response3.decode() ) == True:
           clientSock.close()
           sys.exit()
-#354 recieved, need to start in on data part
+  #354 recieved, need to start in on data part
         if responseHandler250( response2.decode() ) == True and responseHandler354( response3.decode() ) == False:
           break
          
@@ -253,9 +260,8 @@ def main():
       clientSock.send( data.encode() )
       print 'data command sent'
       response3 = clientSock.recv(1024)
-#error handling
+  #error handling
       if responseHandler354( response3.decode() ) == True:
-        print '3'
         clientSock.close()
         sys.exit()
 
@@ -270,27 +276,19 @@ def main():
 
       response4 = clientSock.recv(1024)
       print '250 from mesage body recieved'
-#error handling
+
+  #error handling
       if responseHandler250( response4.decode() ) == True:
-        print '4'
         clientSock.close()
         sys.exit()
-
-#Old code...
-      # clientSock.send( fromAddressForLaterInHeader.encode() )
-      # for y in rcptAddressesForLaterInHeader:
-      #   clientSock.send( y.encode() )
-      # clientSock.send( subjectLine.encode() )
-      # clientSock.send( allText.encode() )
-      #clientSock.send( quit.encode() 
 
 
       clientSock.send( quit.encode() )
       print 'quit sent'
 
+#job is done.  Close socket and exit program.
       clientSock.close()
       print 'connection closed'
-
       sys.exit()
 
   except EOFError:
